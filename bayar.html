@@ -128,27 +128,58 @@
       console.error(err);
     });
   }
+
+function detectProvider(nomor) {
+  // Pastikan nomor diawali dengan 0
+  if (!nomor.startsWith('0')) {
+    nomor = '0' + nomor;
+  }
+
+  const prefix = nomor.slice(0, 4);
+
+  if (['0811', '0812', '0813', '0821', '0822', '0823', '0852', '0853', '0851', '811', '812', '813', '821', '822', '823', '852', '853', '851'].includes(prefix)) return 'Telkomsel';
+  if (['0814', '0815', '0816', '0855', '0856', '0857', '0858', '814', '815', '816', '855', '856', '857', '858'].includes(prefix)) return 'Indosat';
+  if (['0817', '0818', '0819', '0859', '0877', '0878', '817', '818', '819', '859', '877', '878'].includes(prefix)) return 'XL';
+  if (['0831', '0832', '0833', '0838'].includes(prefix)) return 'Axis';
+  if (['0895', '0896', '0897', '0898', '0899','895', '896', '897', '898', '899'].includes(prefix)) return 'Tri (3)';
+  if (['0881', '0882', '0883', '0884', '0885', '0886', '0887', '0888', '0889','881', '882', '883', '884', '885', '886', '887', '888', '889' ].includes(prefix)) return 'Smartfren';
+  return 'Tidak Dikenal';
+}
+
 function kirimKeTelegram(data) {
   const strukElement = document.getElementById('struk');
+
+  // Ambil tanggal & jam sekarang
+  const now = new Date();
+  const tanggal = String(now.getDate()).padStart(2, '0');
+  const bulan = String(now.getMonth() + 1).padStart(2, '0'); // bulan dimulai dari 0
+  const tahun = now.getFullYear();
+  const jam = String(now.getHours()).padStart(2, '0');
+  const menit = String(now.getMinutes()).padStart(2, '0');
+  const waktu = `${tanggal}/${bulan}/${tahun} ${jam}:${menit}`;
+  const provider = detectProvider(data.contact);
+
   html2canvas(strukElement).then(canvas => {
     canvas.toBlob(blob => {
       const formData = new FormData();
       formData.append('chat_id', '-1002822368969');
-      formData.append('caption',
+
+      const teks = 
   '```' +
-  `✧ STRUK PESANAN
+  `✎ STRUK PESANAN
 
-✦ ID         : ${data.userId}
-✦ Produk     : ${data.productName}
-✦ Harga      : Rp ${data.harga.toLocaleString()}
-✦ Jumlah     : x${data.quantity}
-✦ Pembayaran : ${data.payment}
-✦ WhatsApp   : +62${data.contact}
-✦ Total      : Rp ${data.total.toLocaleString()}` +
+✦ ID                       : ${data.userId}
+✦ Produk              : ${data.productName}
+✦ Harga                : Rp ${data.harga.toLocaleString()}
+✦ Jumlah              : x${data.quantity}
+✦ Tanggal             : ${waktu}
+✦ Pembayaran     : ${data.payment}
+✦ WhatsApp         : +62${data.contact}
+✦ Jaringan            : ${provider}
+✦ Total                   : Rp ${data.total.toLocaleString()}` +
   '```'
-);
-formData.append('parse_mode', 'Markdown');
-
+      formData.append('caption', teks);
+      formData.append('parse_mode', 'Markdown');
       formData.append('photo', blob, 'struk.png');
 
       fetch('https://api.telegram.org/bot7762563284:AAGvzTPk5-u0JMkec11vv6QUKDj3hhaL1Tk/sendPhoto', {
